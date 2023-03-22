@@ -320,4 +320,5 @@ class Config:
     p_mlp : float = 0.1
     rep_size : int = None
     n_classes : int = 1000
+    url : str = 'https://download.pytorch.org/models/vit_b_16-c867db91.pth'
 
