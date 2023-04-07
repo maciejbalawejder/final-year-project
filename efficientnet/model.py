@@ -364,7 +364,8 @@ class StochasticDepth(nn.Module):
     
     def __init__(
         self,
-        p : float = 0.5
+        p : float = 0.5,
+        device : str = "cuda" if torch.cuda.is_available() else "cpu"
         ):
         super().__init__()
         self.p = p
@@ -382,7 +383,7 @@ class StochasticDepth(nn.Module):
         """
 
         mask_shape = (x.shape[0],) + (1,)*(x.ndim - 1) # mask shape: [batch, 1, 1, 1]
-        mask = torch.empty(mask_shape).bernoulli_(self.p) / self.p
+        mask = (torch.empty(mask_shape).bernoulli_(self.p) / self.p).to(device)
         
         if self.training: 
             x = mask * x
