@@ -130,8 +130,6 @@ class MBConv(nn.Module):
             single number
         exp : int
             expansion ratio
-        p_sd : float
-            stochastic depth probablity
 
     Attributes
     ----------
@@ -139,8 +137,6 @@ class MBConv(nn.Module):
             defines whether use residual connection or not
         block : nn.Sequential
             collection of expansion operation, depthwise conv, seblock and reduction convolution
-        sd : nn.Module
-            stochastic depth operation that randomly drops a examples in the batch
     """
 
     def __init__(
@@ -149,8 +145,7 @@ class MBConv(nn.Module):
                 out_channels, 
                 kernel_size, 
                 stride, 
-                exp, 
-                p_sd
+                exp
                 ):
 
         super().__init__()
@@ -177,8 +172,6 @@ class MBConv(nn.Module):
 
         self.block = nn.Sequential(*layers)
 
-        
-        self.sd = StochasticDepth(p_sd)
 
     def forward(self, x) -> Tensor:
         """Forward pass.
@@ -194,7 +187,6 @@ class MBConv(nn.Module):
         f = self.block(x)
 
         if self.res_connection:
-            f = self.sd(f)
             f = x + f
 
         return f
@@ -212,8 +204,6 @@ class EfficientNet(nn.Module):
             number of output channels, default 1000 classes for imagenet
         p_drop : float
             dropout probability
-        p_sd : float = 0.2
-            stochastic depth probability
         
     Attributes
     ----------
@@ -238,8 +228,7 @@ class EfficientNet(nn.Module):
             config,
             in_channels=3,
             out_channels=1000,
-            p_drop=0.5,
-            p_sd=0.2
+            p_drop=0.5
             ):
 
         super().__init__()
@@ -264,8 +253,7 @@ class EfficientNet(nn.Module):
                     in_channels = out_channels
                     stride = 1
                 
-                n_p_sd = p_sd * float(stage_block_id / config.n_blocks)
-                stage.append(block(in_channels, out_channels, kernel_size, stride, exp, n_p_sd))
+                stage.append(block(in_channels, out_channels, kernel_size, stride, exp))
                 stage_block_id += 1
 
             layers.append(nn.Sequential(*stage))
@@ -353,42 +341,6 @@ def get_config(name : str = "B4"):
         n_blocks += base.layer_settings[i][0]
     base.n_blocks = n_blocks
     return base, url, p_drop, img_size
-
-class StochasticDepth(nn.Module):
-    """Stochastic Depth / Drop Path module
-    Parameters
-    ----------
-        p : float
-            stochastic depth probablity
-    """
-    
-    def __init__(
-        self,
-        p : float = 0.5,
-        device : str = "cuda" if torch.cuda.is_available() else "cpu"
-        ):
-        super().__init__()
-        self.p = p
-        
-    def forward(self, x: Tensor) -> Tensor:
-        """Forward pass.
-        Parameters
-        ----------
-            x : torch.Tensor
-                Input tensor of shape (batch_size, in_channels, height, width).
-        Returns
-        -------
-            ret : torch.Tensor
-                Output tensor of shape (batch_size, out_channels, height, width).
-        """
-
-        mask_shape = (x.shape[0],) + (1,)*(x.ndim - 1) # mask shape: [batch, 1, 1, 1]
-        mask = (torch.empty(mask_shape).bernoulli_(self.p) / self.p).to(device)
-        
-        if self.training: 
-            x = mask * x
-
-        return x 
 
 def adjust_channels(channels : int, width_mult : float, min_value : int = None) -> int:
     v = channels * width_mult
