@@ -200,7 +200,7 @@ class EfficientNet(nn.Module):
             class with configurations
         in_channels : int 
             number of input channels, default 3 for image
-        out_channels : int
+        n_classes : int
             number of output channels, default 1000 classes for imagenet
         p_drop : float
             dropout probability
@@ -227,7 +227,7 @@ class EfficientNet(nn.Module):
             self, 
             config,
             in_channels=3,
-            out_channels=1000,
+            n_classes=1000,
             p_drop=0.5
             ):
 
@@ -270,7 +270,7 @@ class EfficientNet(nn.Module):
         self.avgpool = nn.AdaptiveAvgPool2d(1)
         self.classifier = nn.Sequential(
             nn.Dropout(p=p_drop, inplace=True),
-            nn.Linear(config.last_conv_out_channels, out_channels),
+            nn.Linear(config.last_conv_out_channels, n_classes),
         )
 
 
