@@ -270,7 +270,7 @@ class EfficientNet(nn.Module):
         self.avgpool = nn.AdaptiveAvgPool2d(1)
         self.classifier = nn.Sequential(
             nn.Dropout(p=p_drop, inplace=True),
-            nn.Linear(config.last_conv_out_channels, config.n_classes),
+            nn.Linear(config.last_conv_out_channels, out_channels),
         )
 
 
@@ -284,7 +284,7 @@ class EfficientNet(nn.Module):
         Returns
         -------
             ret : torch.Tensor
-                Output tensor of shape (batch_size, n_classes).
+                Output tensor of shape (batch_size, out_channels).
         """
 
         x = self.features(x)
